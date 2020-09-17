@@ -1,7 +1,10 @@
 const TRANSIENT = 'transient';
 const DETERMINED = 'determined';
 const NUMBER = 'number';
+const BOOLEAN = 'boolean';
 const RECORD = 'record';
+const PROCEDURE = 'procedure';
+const REFERENCE = 'reference';
 
 export function makeTransient() {
     return {node_type: TRANSIENT};
@@ -11,8 +14,16 @@ export function makeNumber(number) {
     return {node_type: DETERMINED, type: NUMBER, value: number};
 }
 
+export function makeBool(bool) {
+    return {node_type: DETERMINED, type: BOOLEAN, value: bool};
+}
+
 export function makeRecord(label, features, record) {
     return {node_type: DETERMINED, type: RECORD, label: label, features: features, value: record};
+}
+
+export function makeProcedure(procedureGenerator) {
+    return {node_type: DETERMINED, type: PROCEDURE, value: procedureGenerator};
 }
 
 function isDetermined(a) {
@@ -21,6 +32,10 @@ function isDetermined(a) {
 
 export function isNumber(a) {
     return isDetermined(a) && a.type === NUMBER;
+}
+
+function isBool(a) {
+    return isDetermined(a) && a.type === BOOLEAN;
 }
 
 export function isTransient(a) {
@@ -58,4 +73,12 @@ export function* waitUntilDetermined(a) {
         yield { message: 'SUSPEND'};
     }
     return true;
+}
+
+export function deref(a) {
+    let temp = a;
+    while(temp.node_type == REFERENCE) {
+        temp = temp.value;
+    }
+    return temp;
 }
