@@ -5,7 +5,6 @@ export function runner(entry_thread) {
     while(true) {
         const current_thread = queue.shift();
         let {value, done} = current_thread.next();
-        console.log(value);
         if (done) {
             if (queue.length === 0) {
                 return value;

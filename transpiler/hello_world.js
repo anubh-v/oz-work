@@ -3,21 +3,28 @@ import { unify } from './unify.js';
 import { runner } from './conc-runner.js';
 
 
-/* Oz core dialect
+/* Oz core dialect */
+/*
 const x;
+const y;
 const x = 5;
-print(x);
+x = y;
+print(y);
 */
 
-/* Oz expressive dialect
+/* Oz expressive dialect */
+/*
 const x = 5;
-console.log(x);
+const y = x;
+print(y);
 */
 
 function* main() {
   const x = makeTransient();
+  const y = makeTransient();
   unify(x, makeNumber(5));
-  print(x);
+  unify(y, x);
+  print(y);
 }
 
 runner(main());

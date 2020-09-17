@@ -52,3 +52,10 @@ export function arityMatch(a, b) {
 export function print(a) {
     console.log(a);
 }
+
+export function* waitUntilDetermined(a) {
+    while(!isDetermined(a)) {
+        yield { message: 'SUSPEND'};
+    }
+    return true;
+}
