@@ -1,4 +1,4 @@
-function runner(entry_thread) {
+export function runner(entry_thread) {
     const queue = [];
     queue.unshift(entry_thread);
 
@@ -27,5 +27,3 @@ function runner(entry_thread) {
         }
     }
 }
-
-exports.runner = runner;
