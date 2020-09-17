@@ -1,0 +1,50 @@
+local Sqrt SqrtItr Improve GoodEnough Abs in
+   proc {Sqrt X Result1}
+      local Guess in
+	 Guess = 1.0
+	 {SqrtItr Guess X Result1}
+      end
+   end
+   proc {SqrtItr Guess X Result2}
+      local IfArbiter1 in
+	 {GoodEnough Guess X IfArbiter1}
+	 if IfArbiter1 then
+	    Guess = Result2
+	 else
+	    local UnnestApply1 in
+	       {Improve Guess X UnnestApply1}
+	       {SqrtItr UnnestApply1 X Result2}
+	    end
+	 end
+      end
+   end
+   proc {Improve Guess X Result3}
+      local UnnestApply2 UnnestApply3 UnnestApply4 in
+	 UnnestApply3 = X / Guess
+	 UnnestApply2 = Guess + UnnestApply3
+	 UnnestApply4 = 2.0
+	 Result3 = UnnestApply2 / UnnestApply4
+      end
+   end
+   proc {GoodEnough Guess X Result4}
+      local UnnestApply5 UnnestApply6 UnnestApply7 UnnestApply8 UnnestApply9 in
+	 UnnestApply8 = Guess * Guess
+	 UnnestApply7 = X - UnnestApply8
+	 {Abs UnnestApply7 UnnestApply6}
+	 UnnestApply5 = UnnestApply6 / X
+	 UnnestApply9 = 1.0e~05
+	 Result4 = UnnestApply5 < UnnestApply9
+      end
+   end
+   proc {Abs X Result5}
+      local IfArbiter2 UnnestApply10 in
+	 UnnestApply10 = 0.0
+	 IfArbiter2 = X < UnnestApply10
+	 if IfArbiter2 then
+	    Result5 = ~X
+	 else
+	    X = Result5
+	 end
+      end
+   end
+end

@@ -1,0 +1,10 @@
+local AppendD in
+   proc {AppendD D1 D2 Result1}
+      local S1 E1 S2 E2 in
+	 D1 = '#'(S1 E1)
+	 D2 = '#'(S2 E2)
+	 S2 = E1
+	 Result1 = '#'(S1 E2)
+      end
+   end
+end

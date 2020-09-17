@@ -1,0 +1,18 @@
+local Fact in
+   proc {Fact N Result1}
+      local IfArbiter1 UnnestApply1 in
+	 UnnestApply1 = 0
+	 IfArbiter1 = N == UnnestApply1
+	 if IfArbiter1 then
+	    Result1 = 1
+	 else
+	    local UnnestApply2 UnnestApply3 UnnestApply4 in
+	       UnnestApply4 = 1
+	       UnnestApply3 = N - UnnestApply4
+	       {Fact UnnestApply3 UnnestApply2}
+	       Result1 = N * UnnestApply2
+	    end
+	 end
+      end
+   end
+end

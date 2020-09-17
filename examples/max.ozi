@@ -1,0 +1,12 @@
+local Max in
+   proc {Max X Y Result1}
+      local IfArbiter1 in
+	 IfArbiter1 = X < Y
+	 if IfArbiter1 then
+	    Y = Result1
+	 else
+	    X = Result1
+	 end
+      end
+   end
+end

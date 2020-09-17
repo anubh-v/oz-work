@@ -1,0 +1,12 @@
+local Append in
+   proc {Append Ls Ms Result1}
+      case Ls of nil then
+	 Ms = Result1
+      [] '|'(X Lr) then
+	 local RecordArg1 in
+	    Result1 = '|'(X RecordArg1)
+	    {Append Ls Ms RecordArg1}
+	 end
+      end
+   end
+end

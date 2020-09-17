@@ -1,0 +1,27 @@
+local Merge in
+   proc {Merge Xs Ys Result1}
+      local Arbiter1 in
+	 Arbiter1 = '#'(Xs Ys)
+	 case Arbiter1 of '#'(nil Ys) then
+	    Ys = Result1
+	 [] '#'(Xs nil) then
+	    Xs = Result1
+	 [] '#'('|'(X Xr) '|'(Y Yr)) then
+	    local IfArbiter1 in
+	       IfArbiter1 = X < Y
+	       if IfArbiter1 then
+		  local RecordArg1 in
+		     Result1 = '|'(X RecordArg1)
+		     {Merge Xr Ys RecordArg1}
+		  end
+	       else
+		  local RecordArg2 in
+		     Result1 = '|'(Y RecordArg2)
+		     {Merge Xs Yr RecordArg2}
+		  end
+	       end
+	    end
+	 end
+      end
+   end
+end

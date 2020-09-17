@@ -1,0 +1,13 @@
+local Length in
+   proc {Length Ls Result1}
+      case Ls of nil then
+	 Result1 = 0
+      [] '|'(Wildcard1 Lr) then
+	 local UnnestApply1 UnnestApply2 in
+	    UnnestApply1 = 1
+	    {Length Lr UnnestApply2}
+	    Result1 = UnnestApply1 + UnnestApply2
+	 end
+      end
+   end
+end

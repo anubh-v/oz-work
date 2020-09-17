@@ -1,0 +1,9 @@
+local Sqrt in
+   proc {Sqrt Result1}
+      local Guess UnnestApply1 in
+	 Guess = 1
+	 UnnestApply1 = 1
+	 Result1 = Guess + UnnestApply1
+      end
+   end
+end

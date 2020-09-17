@@ -1,0 +1,15 @@
+local Iterate in
+   proc {Iterate S IsDone Transform Result1}
+      local IfArbiter1 in
+	 {IsDone S IfArbiter1}
+	 if IfArbiter1 then
+	    S = Result1
+	 else
+	    local S1 in
+	       {Transform S S1}
+	       {Iterate S1 IsDone Transform Result1}
+	    end
+	 end
+      end
+   end
+end
