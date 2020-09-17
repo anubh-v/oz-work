@@ -1,5 +1,8 @@
-let NUM_THREADS = 800;
-
+const NUM_THREADS = 6000;
+const ROW_SIZE_A = 6000;
+const COL_SIZE_A = 50;
+const COL_SIZE_B = 5;
+const ROWS_PER_THREAD = ROW_SIZE_A / NUM_THREADS;
 
 function getRandomInt(min, max) {
   min = math_ceil(min);
@@ -29,7 +32,7 @@ function make_matrix(row_size, col_size) {
 
 function dot_product(row, right_matrix, col_index) {
   let result = 0;
-  for (let i = 0; i < NUM_THREADS; i = i + 1) {
+  for (let i = 0; i < COL_SIZE_A; i = i + 1) {
     result = result + (row[i] * right_matrix[i][col_index]);
   }
   return result;
@@ -37,21 +40,26 @@ function dot_product(row, right_matrix, col_index) {
 
 function matrix_mult(left_mat, right_mat) {
   let result = [];
-  for (let k = 0; k < NUM_THREADS; k = k + 1) {
+  for (let k = 0; k < ROW_SIZE_A; k = k + 1) {
     result[k] = [];
   }
-  display(result);
+  // display(result);
 
   for(let i = 0; i < NUM_THREADS; i = i + 1) {
     concurrent_execute(() => {
-      display(i);
+      // display(i);
       // display(left_mat);
-      let row = left_mat[i];
+      const start_row = i * ROWS_PER_THREAD;
+      // display(start_row);
+      const end_row = start_row + ROWS_PER_THREAD;
       // display(row);
-      for (let j = 0; j < 5; j = j + 1) {
-        result[i][j] = dot_product(row, right_mat, j);
+      for(let j = start_row; j < end_row; j = j + 1) {
+        const row = left_mat[j];
+        for (let k = 0; k < COL_SIZE_B; k = k + 1) {
+          result[j][k] = dot_product(row, right_mat, k);
+        }
+        //display(result);
       }
-      // display(result);
     });
   }
 
@@ -60,8 +68,8 @@ function matrix_mult(left_mat, right_mat) {
 
 
 
-let A  = make_matrix(NUM_THREADS, NUM_THREADS);
-let B  = make_matrix(NUM_THREADS, 5);
-display(A);
-display(B);
+let A  = make_matrix(ROW_SIZE_A, COL_SIZE_A);
+let B  = make_matrix(COL_SIZE_A, COL_SIZE_B);
+// display(A);
+// display(B);
 matrix_mult(A, B);
