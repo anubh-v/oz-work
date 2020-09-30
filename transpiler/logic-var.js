@@ -9,9 +9,9 @@ const REFERENCE = 'reference';
 const DETERMINED = 'determined';
 
 export class LogicVariable {
-    constructor(value=null) {
-        if (value === null) {
-            this.value = null;
+    constructor(value=undefined) {
+        if (value === undefined) {
+            this.value = undefined;
             this.type = TRANSIENT;
         } else {
             this.value = value;
