@@ -52,9 +52,9 @@ export class LogicVariable {
       return false;
     }
 
-    static unify(v1, v2) {
+    unify(other) {
       const todo = [];
-      todo.unshift([v1,v2]);
+      todo.unshift([this, other]);
       const explored = [];
 
       while(todo.length !== 0) {
@@ -72,10 +72,11 @@ export class LogicVariable {
             for (let i = 0; i < a.length; i++) {
               todo.unshift([a[i], b[i]]);
             }
+          } else {
+            explored.unshift(a);
+            explored.unshift(b);
+            throw new Error('Failed to unify');
           }
-        } else {
-          explored.unshift(a);
-          explored.unshift(b);
         }
       }
     }
@@ -85,19 +86,3 @@ export class LogicVariable {
       v1.type = REFERENCE;
     }
 }
-
-const f = new LogicVariable();
-const g = new LogicVariable();
-
-// execute thread one
-(async function() {
-    console.log((await f) + (await g));
-})();
-
-// execute thread two
-
-(async function() {
-   await delay(2000);
-   LogicVariable.unify(f, new LogicVariable(5));
-   LogicVariable.unify(g, new LogicVariable(10));
-})();
