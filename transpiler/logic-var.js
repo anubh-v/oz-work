@@ -93,7 +93,7 @@ export class LogicVariable {
     }
 
     static bind(v1, v2) {
-      v1.value = v2;
+      v1.value = v2.deref();
       v1.type = REFERENCE;
     }
 }

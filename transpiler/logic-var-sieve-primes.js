@@ -44,7 +44,7 @@ function generate_list(n, limit, list) {
         const head = new LogicVariable(n);
         const tail = new LogicVariable();
         list.unify(new LogicVariable([head, tail]));
-        generate_list(n + 1, limit, tail);
+        setTimeout(() => generate_list(n + 1, limit, tail), 0);
     } else {
         // empty array [] represents end of a list / stream
         list.unify(new LogicVariable([]));
@@ -64,6 +64,6 @@ const integers = new LogicVariable();
 const primes = new LogicVariable();
 
 // producer thread
-(async function() { generate_list(2, 6000, integers); })();
+(async function() { generate_list(2, 10000, integers); })();
 (async function() { sieve(integers, primes); })();
 (async function() { consumeList(primes); })();
