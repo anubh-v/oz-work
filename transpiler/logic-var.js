@@ -52,13 +52,23 @@ export class LogicVariable {
       return false;
     }
 
+    deref() {
+      let temp = this;
+      while(temp.type === REFERENCE) {
+        temp = temp.value;
+      }
+      return temp;
+    }
+
     unify(other) {
       const todo = [];
       todo.unshift([this, other]);
       const explored = [];
 
       while(todo.length !== 0) {
-        const [a, b] = todo.shift();
+        let [a, b] = todo.shift();
+        a = a.deref();
+        b = b.deref();
         if (!a.equals(b)) {
           if (a.isTransient()) {
             LogicVariable.bind(a, b);
@@ -66,11 +76,11 @@ export class LogicVariable {
             LogicVariable.bind(b, a);
           } else if (explored.indexOf(a) !== -1 && explored.indexOf(b) !== -1) {
             continue;
-          } else if (Array.isArray(a) && Array.isArray(b) && (a.length === b.length)) {
+          } else if (Array.isArray(a.value) && Array.isArray(b.value) && (a.value.length === b.value.length)) {
             explored.unshift(a);
             explored.unshift(b);
-            for (let i = 0; i < a.length; i++) {
-              todo.unshift([a[i], b[i]]);
+            for (let i = 0; i < a.value.length; i++) {
+              todo.unshift([a.value[i], b.value[i]]);
             }
           } else {
             explored.unshift(a);
