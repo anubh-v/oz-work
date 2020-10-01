@@ -20,6 +20,7 @@ export class LogicVariable {
     }
 
     then(onFulfilled) {
+      //console.log(this);
       if (this.isTransient()) {
         setTimeout(() => this.then(onFulfilled), 0);
       } else if (this.isDetermined()) {

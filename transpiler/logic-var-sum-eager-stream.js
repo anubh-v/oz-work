@@ -3,7 +3,6 @@ import { LogicVariable } from "./logic-var.js";
 /**
  * In this file, async functions are used to sum an eager stream of consecutive integers.
  * The empty array [] represents the end of a stream
- *
  */
 
 async function sum(list, sum_so_far) { 
