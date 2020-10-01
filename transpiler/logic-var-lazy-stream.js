@@ -31,7 +31,7 @@ const list = new LogicVariable();
 
 // thread one - producer
 (async function() { makeList(0, list); })();
-// thread two - consumer
+// thread two - a consumer that demands one element per hundredth of a second
 (async function() { consumeList(list, "fast", 10); })();
-// thread two - consumer
+// thread two - a consumer that demands one element per second
 (async function() { consumeList(list, 'SLOW', 1000); })();
