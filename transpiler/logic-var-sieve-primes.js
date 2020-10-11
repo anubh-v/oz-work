@@ -64,6 +64,6 @@ const integers = new LogicVariable();
 const primes = new LogicVariable();
 
 // producer thread
-(async function() { generate_list(2, 10000, integers); })();
+(async function() { generate_list(2, 1000000, integers); })();
 (async function() { sieve(integers, primes); })();
 (async function() { consumeList(primes); })();
