@@ -4,23 +4,20 @@ export function thread() {
   }
 }
 
-export async function suspendIfNeeded(initialTime, isAsync, func) {
-  console.log(initialTime);
+export async function suspendIfNeeded(initialTime, func) {
   const timeInterval = process.hrtime(initialTime.time);
   if (moreThanOneSecond(timeInterval)) {
+    console.log('delaying');
+    console.log(timeInterval[0]);
     await delay(1);
     initialTime.time = process.hrtime(); // reset timer
   }
 
-  if (isAsync) {
-    func(initialTime);
-  } else {
-    await func(initialTime);
-  }
+  return await func(initialTime);
 }
 
 function moreThanOneSecond(timeInterval) {
-  return (timeInterval[1] / 1000000) > 1;
+  return timeInterval[0] > 1;
 }
 
 function delay(numSeconds) {

@@ -19,10 +19,19 @@ function transform(source) {
       transformNonAsyncCalls(node);
     }
 
+    if (node.type === 'ArrowFunctionExpression') {
+      transformArrowFunction(node);
+    }
+
   });
 
   output = wrapTopLevel(output);
   console.log(output);
+}
+
+function transformArrowFunction(node) {
+  const transformedCode = `async (${insertInitialTimeIntoArgs(node.params)}) => ${node.body.source()}`;
+  node.update(transformedCode);
 }
 
 function transformFunctionDefinition(node) {
@@ -34,14 +43,32 @@ function transformFunctionDefinition(node) {
 }
 
 function transformNonAsyncCalls(node) {
-  const transformedCode = `await suspendIfNeeded(initialTime, false,
-    (initialTime) => ${node.callee.source()}(${insertInitialTimeIntoArgs(node.arguments)}))`;
+
+  if (isExternalFunction(node)) {
+    return;
+  }
+
+  if (isThreadCall(node)) {
+    node.arguments.forEach(arg => arg.source());
+    return;
+  }
+  
+  const transformedCode = `await suspendIfNeeded(initialTime, async (initialTime) => await ${node.callee.source()}(${insertInitialTimeIntoArgs(node.arguments)}))`;
 
   node.update(transformedCode);
 }
 
 function insertInitialTimeIntoArgs(argsArray) {
   return argsArray.reduce((a, c) => a + ',' + c.source(), 'initialTime');
+}
+
+function isThreadCall(node) {
+  return node.callee.type === 'Identifier' && node.callee.name === 'thread';
+}
+
+function isExternalFunction(node) {
+  return node.callee.type === 'Identifier' &&
+    (node.callee.name === 'setTimeout' || node.callee.name === 'log');
 }
 
 function wrapTopLevel(topLevelSource) {
