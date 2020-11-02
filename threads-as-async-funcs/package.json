@@ -1,0 +1,19 @@
+{
+  "name": "transpiler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "conc-runner.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "transpile": "node transpiler.js input.js > output.js && js-beautify output.js > output1.js && cat output1.js > output.js && rm output1.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "acorn": "^8.0.4",
+    "astring": "^1.4.3",
+    "falafel": "^2.2.4",
+    "js-beautify": "^1.13.0"
+  }
+}

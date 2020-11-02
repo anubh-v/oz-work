@@ -22,19 +22,36 @@ local(X, Y, Z, () => {
     const Y;
 }
 
-// Idea 4
 
-for(let X, Y = 3;;) {
-    // code using X, Y
+// case
+switch(x) {
+    case {foo: {bar1: a, bar2: b}}:
+      baz(a, b);
+      break;
+    case {goo: {bar1: a}}:
+      baz2(a);
+    default:
+      bar(x);
 }
 
 // case
 switch(x) {
-    case {record_label: {feature1: a, feature2: b}}:
-      foo();
+    case []:
+      baz(a, b);
+      break;
+    case [x, y, z]:
+      baz2(a);
+    case [x, y]:
+        //
+        break;
     default:
-      bar();
+      bar(x);
 }
+
+// Idea  2 - case on lists
+match(x,
+    ([]) => [],
+    ([x, xs]) => [x]);
 
 // Records
 X = {record_label: {feature1: val, feature2: val}}
