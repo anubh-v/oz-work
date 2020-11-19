@@ -8,7 +8,7 @@ export function thread() {
 
 export function suspendNeeded(threadState) {
   threadState.count += 1;
-  return threadState.count > 200000;
+  return threadState.count > 200;
 }
 
 export async function suspend(threadState, func) {
