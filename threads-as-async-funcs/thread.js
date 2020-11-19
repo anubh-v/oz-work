@@ -1,19 +1,20 @@
+let count = 0;
+
 export function thread() {
   for (let func of arguments) {
-    func({time: process.hrtime()});
+    func({count: 0});
   }
 }
 
-export async function suspendIfNeeded(initialTime, func) {
-  const timeInterval = process.hrtime(initialTime.time);
-  if (moreThanOneSecond(timeInterval)) {
-    console.log('delaying');
-    console.log(timeInterval[0]);
-    await delay(1);
-    initialTime.time = process.hrtime(); // reset timer
-  }
+export function suspendNeeded(threadState) {
+  threadState.count += 1;
+  return threadState.count > 200000;
+}
 
-  return func(initialTime);
+export async function suspend(threadState, func) {
+  await threadState.count;
+  threadState.count = 0;
+  return func(threadState);
 }
 
 function moreThanOneSecond(timeInterval) {

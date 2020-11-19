@@ -37,8 +37,8 @@ function transformArrowFunction(node) {
 function transformFunctionDefinition(node) {
   const functionId = node.id === null ? '' : node.id.source();
   const transformedCode = `async function ${functionId} (${insertInitialTimeIntoArgs(node.params)})
-    ${node.body.source()}
-  `
+    ${node.body.source()}`;
+  
   node.update(transformedCode);
 }
 
@@ -53,7 +53,7 @@ function transformNonAsyncCalls(node) {
     return;
   }
   
-  const transformedCode = `await suspendIfNeeded(initialTime, async (initialTime) => await ${node.callee.source()}(${insertInitialTimeIntoArgs(node.arguments)}))`;
+  const transformedCode = `needSuspend() ? await suspendIfNeeded(() => ${node.callee.source()}(${(node.arguments)}) : 1`;
 
   node.update(transformedCode);
 }
