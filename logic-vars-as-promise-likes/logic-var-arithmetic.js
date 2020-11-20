@@ -17,7 +17,7 @@ const g = new LogicVariable();
 // execute thread two
 
 (async function() {
-   await delay(2000);
+   await delay(2);
    f.unify(new LogicVariable(5));
    g.unify(new LogicVariable(10));
 })();
