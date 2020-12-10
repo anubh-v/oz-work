@@ -1,7 +1,7 @@
 import { default as falafel } from 'falafel';
 import { default as fs } from 'fs';
 
-const threadPreamble = 'import { thread, suspendIfNeeded } from "./thread.js";';
+const threadPreamble = 'import { thread, suspendNeeded, suspend } from "./thread.js";';
 
 const infile = process.argv[2];
 
@@ -53,13 +53,12 @@ function transformNonAsyncCalls(node) {
     return;
   }
   
-  const transformedCode = `needSuspend() ? await suspendIfNeeded(() => ${node.callee.source()}(${(node.arguments)}) : 1`;
-
+  const transformedCode = `suspendNeeded(threadState) ? await suspend(threadState, () => ${node.callee.source()}(${insertInitialTimeIntoArgs(node.arguments)})) : ${node.callee.source()}(${insertInitialTimeIntoArgs(node.arguments)})`;
   node.update(transformedCode);
 }
 
 function insertInitialTimeIntoArgs(argsArray) {
-  return argsArray.reduce((a, c) => a + ',' + c.source(), 'initialTime');
+  return argsArray.reduce((a, c) => a + ',' + c.source(), 'threadState');
 }
 
 function isThreadCall(node) {
@@ -73,7 +72,7 @@ function isExternalFunction(node) {
 
 function wrapTopLevel(topLevelSource) {
   return ` ${threadPreamble}
-  thread(async (initialTime) => {
+  thread(async (threadState) => {
     ${topLevelSource}
   }); `
 }
