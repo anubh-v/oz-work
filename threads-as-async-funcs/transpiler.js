@@ -1,7 +1,7 @@
 import { default as falafel } from 'falafel';
 import { default as fs } from 'fs';
 
-const threadPreamble = 'import { thread, suspendNeeded, suspend } from "./thread.js";';
+const threadPreamble = 'import { thread, suspendNeeded, suspend, mark, callHandler } from "./thread.js";';
 
 const infile = process.argv[2];
 
@@ -11,8 +11,12 @@ fs.readFile(infile, 'utf8', function(err, data) {
 
 function transform(source) {
   let output = falafel(source, function (node) {
-    if (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression') {
+    if (node.type === 'FunctionDeclaration') {
       transformFunctionDefinition(node);
+    }
+
+    if (node.type === 'FunctionExpression') {
+      transformFunctionExpression(node);
     }
 
     if (node.type === 'CallExpression') {
@@ -30,14 +34,22 @@ function transform(source) {
 }
 
 function transformArrowFunction(node) {
-  const transformedCode = `async (${insertInitialTimeIntoArgs(node.params)}) => ${node.body.source()}`;
+  const transformedCode = `mark(async (${insertInitialTimeIntoArgs(node.params)}) => ${node.body.source()})`;
   node.update(transformedCode);
 }
 
 function transformFunctionDefinition(node) {
-  const functionId = node.id === null ? '' : node.id.source();
-  const transformedCode = `async function ${functionId} (${insertInitialTimeIntoArgs(node.params)})
+  const functionId = node.id = node.id.source();
+  let transformedCode = `async function ${functionId} (${insertInitialTimeIntoArgs(node.params)})
     ${node.body.source()}`;
+  
+  transformedCode += `mark(${functionId});`
+  node.update(transformedCode);
+}
+
+function transformFunctionExpression(node) {
+  const transformedCode = `mark(async function (${insertInitialTimeIntoArgs(node.params)})
+    ${node.body.source()})`;
   
   node.update(transformedCode);
 }
@@ -53,12 +65,16 @@ function transformNonAsyncCalls(node) {
     return;
   }
   
-  const transformedCode = `suspendNeeded(threadState) ? await suspend(threadState, () => ${node.callee.source()}(${insertInitialTimeIntoArgs(node.arguments)})) : ${node.callee.source()}(${insertInitialTimeIntoArgs(node.arguments)})`;
+  const transformedCode = `suspendNeeded(threadState) ? await suspend(threadState, () => callHandler(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + "," + c)})) : callHandler(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)})`;
   node.update(transformedCode);
 }
 
 function insertInitialTimeIntoArgs(argsArray) {
   return argsArray.reduce((a, c) => a + ',' + c.source(), 'threadState');
+}
+
+function getArgs(argsArray) {
+  return argsArray.map(arg => arg.source());
 }
 
 function isThreadCall(node) {
@@ -71,7 +87,7 @@ function isExternalFunction(node) {
 }
 
 function wrapTopLevel(topLevelSource) {
-  return ` ${threadPreamble}
+  return ` ${threadPreamble}  
   thread(async (threadState) => {
     ${topLevelSource}
   }); `
