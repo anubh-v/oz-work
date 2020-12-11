@@ -87,10 +87,10 @@ function isExternalFunction(node) {
 }
 
 function wrapTopLevel(topLevelSource) {
-  return ` ${threadPreamble}  
-  thread(async (threadState) => {
+  return ` ${threadPreamble}
+  thread([async (threadState) => {
     ${topLevelSource}
-  }); `
+  }, 1]); `
 }
 
 
