@@ -17,7 +17,7 @@ async function* slowBar(threadState) {
 }
 
 async function* fastBar(threadState) {
-    for (let i = 0; i < 1000000; i++) {
+    for (let i = 0; i < 100000; i++) {
         if ((i % 10) === 0) {
             yield new Message(`SUSPEND`);
         }

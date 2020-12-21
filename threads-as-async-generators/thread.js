@@ -6,12 +6,11 @@ export class ThreadManager {
         this.blockedThreads = []; // threads waiting for promise-like objects to be resolved
         this.currentThreadId = 0;
         this.nextId = 0;
-
-        this.runningTime = performance.now();
     }
 
     start(firstThreadGenerator) {
       this.spawn(firstThreadGenerator);
+      this.startTime = performance.now();
       this.run(firstThreadGenerator);
     }
 
@@ -65,11 +64,18 @@ export class ThreadManager {
         }
 
         // TODO: schedule a timeout if needed
-
+        if (this.hasExceededRunningTime()) {
+            console.log('timing out');
+            setTimeout(() => {
+                this.startTime = performance.now();
+                this.poll();
+            }, 0);
+            return;
+        }
 
         // if thread is completed / suspended / blocked, pick another runnable thread to run (if any)
         if (this.runnableThreads.length !== 0) {
-            const nextThreadToRun = this.selectThreadToRun(id);
+            const nextThreadToRun = this.selectThreadToRun(this.currentThreadId);
             this.run(nextThreadToRun);
             return;
         }
@@ -119,6 +125,11 @@ export class ThreadManager {
 
         // if no runnable, and no blocked threads, no further work needed by ThreadManager
         
+    }
+
+    hasExceededRunningTime() {
+        const timeNow = performance.now();
+        return (timeNow - this.startTime) > 500;
     }
 
 
