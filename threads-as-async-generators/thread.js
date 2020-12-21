@@ -1,6 +1,9 @@
+import { Message } from './message.js';
+ 
 export class ThreadManager {
     constructor() {
-        this.sleepingThreads = [];
+        this.runnableThreads = [];
+        this.blockedThreads = []; // threads waiting for promise-like objects to be resolved
         this.currentThreadId = 0;
         this.nextId = 0;
     }
@@ -13,7 +16,7 @@ export class ThreadManager {
     spawn(threadGenerator) {
         const threadId = this.nextId;
         this.nextId += 1;
-        this.sleepingThreads.push([threadId, false, threadGenerator({id: threadId})]); 
+        this.runnableThreads.push([threadId, false, threadGenerator({id: threadId})]); 
     }
 
     spawnThreads() {
@@ -24,8 +27,8 @@ export class ThreadManager {
 
     async run(threadId) {
         // remove thread from sleeping threads
-        const threadIndex = this.sleepingThreads.findIndex(([id, hasRun, generator]) => id === threadId);
-        const [id, hasRun, generator] = this.sleepingThreads.splice(threadIndex, 1)[0];
+        const threadIndex = this.runnableThreads.findIndex(([id, hasRun, generator]) => id === threadId);
+        const [id, hasRun, generator] = this.runnableThreads.splice(threadIndex, 1)[0];
         this.currentThreadId = id;
 
         // run thread
@@ -36,27 +39,34 @@ export class ThreadManager {
                 break;
             }
 
-            if (result.value == 'SUSPEND') {
-               this.sleep(generator, id);
-               break;
+            if (result.value instanceof Message) {
+               if (result.value.isSuspend()) {
+                   this.sleep(generator, id);
+                   break;
+               }
+
+               if (result.value.isPromise()) {
+                   Promise.resolve(result.value.value).then()
+                   break;
+               }
             }
             result = await generator.next();
         }
 
 
         // if thread is completed / suspended, pick another sleeping thread to run (if any)
-        if (this.sleepingThreads.length !== 0) {
+        if (this.runnableThreads.length !== 0) {
             const nextThreadToRun = this.selectAnotherThread(id);
             this.run(nextThreadToRun);
         }
     }
 
     sleep(threadGenerator, threadId) {
-        this.sleepingThreads.push([threadId, true, threadGenerator]);
+        this.runnableThreads.push([threadId, true, threadGenerator]);
     }
 
     selectAnotherThread(threadIdToAvoid) {
-        return this.sleepingThreads.find(([id, hasRun, generator]) => id !== threadIdToAvoid)[0];
+        return this.runnableThreads.find(([id, hasRun, generator]) => id !== threadIdToAvoid)[0];
     }
 
 }
