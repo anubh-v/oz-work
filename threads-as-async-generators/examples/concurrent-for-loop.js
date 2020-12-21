@@ -1,4 +1,5 @@
 import { ThreadManager } from '../thread.js';
+import { Message } from '../message.js';
 
 const manager = new ThreadManager();
 
@@ -12,7 +13,7 @@ async function* baz(threadState) {
     for (let i = 0; i < 100; i = i + 1) {
         console.log(`thread ${threadState.id} is at iteration ${i}`);
         if ((i % 10) === 0) {
-            yield 'SUSPEND';
+            yield new Message('SUSPEND');
         }
     }
 }
