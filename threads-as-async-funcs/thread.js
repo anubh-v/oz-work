@@ -1,8 +1,10 @@
 let nextId = 0; // id of next thread spawned
+let currentTurn = 0; // id of thread that should be given control (at any point)
 
-let threadFuncs = {}; // map thread id to thread async func
+let threadStates = {}; // map thread id to thread state
 let sleepingThreads = {}; // map thread id to thread resolver
 let priorities = {}; // map thread id to thread priority
+let priorityOrderings = {};
 
 
 function gotoSleep(threadId) {
@@ -27,13 +29,15 @@ export function thread() {
     nextId += 1;
   }
 
+  setCurrentTurn();
   console.log(threadIds);
 
   for (let threadId of threadIds) {
     console.log(`launching thread ${threadId}`);
-    const threadFunc = threadFuncs[threadId];
-    threadFunc({count: 0, priority: priorities[threadId], id: threadId}).then(value => {
+    const threadFunc = threadStates[threadId].func;
+    threadFunc(threadStates[threadId]).then(value => {
       deleteThread(threadId);
+      setCurrentTurn();
     });
   }
     
@@ -41,13 +45,22 @@ export function thread() {
 
 function spawn(threadId, threadFunc, priority) {
   console.log(`spawning thread ${threadId} with priority ${priority}`);
-  threadFuncs[threadId] = threadFunc;
+  threadStates[threadId] = {id: threadId, func:threadFunc, count: 0, priority: priority};
   priorities[threadId] = priority;
+
+  if (priorityOrderings[priority] === undefined) {
+    priorityOrderings[priority] = [threadId];
+  } else {
+    priorityOrderings[priority].push(threadId);
+  }
+
 }
 
-function deleteThread(threadId) {
-  delete threadFuncs[threadId];
+function deleteThread(threadId, threadPriority) {
+  delete threadStates[threadId];
   delete priorities[threadId];
+  const indexToRemove = priorityOrderings[threadPriority].indexOf(threadId);
+  priorityOrderings[threadPriority].splice(indexToRemove, 1);
 }
 
 function getMaxPriority() {
@@ -58,6 +71,11 @@ function getMaxPriority() {
   }
 
   return max;
+}
+
+function setCurrentTurn() {
+  const currentMaxPriority = getMaxPriority();
+  currentTurn = priorityOrderings[currentMaxPriority][0];
 }
 
 function getSleepingThreadIdByPriority(requestedPriority, threadToAvoid) {
@@ -89,7 +107,7 @@ export function suspendNeeded(threadState) {
   threadState.count += 1;
   const currentMaxPriority = getMaxPriority();
 
-  if (Object.keys(threadFuncs).length === 1) {
+  if (Object.keys(threadStates).length === 1) {
     // only one thread present (the current thread)
     return false;
   }
