@@ -1,36 +1,126 @@
+let nextId = 0; // id of next thread spawned
 
-const maxPriorities = [];
-const priorities = [];
+let threadFuncs = {}; // map thread id to thread async func
+let sleepingThreads = {}; // map thread id to thread resolver
+let priorities = {}; // map thread id to thread priority
+
+
+function gotoSleep(threadId) {
+  return new Promise((onFulfilled) => {
+    sleepingThreads[threadId] = onFulfilled;
+  });
+}
+
+function wakeup(waker_func) {
+  waker_func('awake');
+}
 
 export function thread() {
   const args = [...arguments];
+
+  const threadIds = [];
+
+  // assign threadIds
   for (let [func, priority] of args) {
+    threadIds.push(nextId);
+    spawn(nextId, func, priority);
+    nextId += 1;
+  }
 
-    if (maxPriorities.length === 0 || priority > maxPriorities[0]) {
-      maxPriorities.unshift(priority);
-      console.log('installing max priority ' + priority);
-    } else {
-      maxPriorities.unshift(maxPriorities[0]);
-    }
+  console.log(threadIds);
 
-    priorities.unshift(priority);
-
-    func({count: 0, priority: priority}).then(() =>  { 
-      maxPriorities.shift()
+  for (let threadId of threadIds) {
+    console.log(`launching thread ${threadId}`);
+    const threadFunc = threadFuncs[threadId];
+    threadFunc({count: 0, priority: priorities[threadId], id: threadId}).then(value => {
+      deleteThread(threadId);
     });
   }
+    
 }
 
+function spawn(threadId, threadFunc, priority) {
+  console.log(`spawning thread ${threadId} with priority ${priority}`);
+  threadFuncs[threadId] = threadFunc;
+  priorities[threadId] = priority;
+}
+
+function deleteThread(threadId) {
+  delete threadFuncs[threadId];
+  delete priorities[threadId];
+}
+
+function getMaxPriority() {
+  let max = 0;
+
+  for (let priority of Object.values(priorities)) {
+    max = priority > max ? priority : max;
+  }
+
+  return max;
+}
+
+function getSleepingThreadIdByPriority(requestedPriority, threadToAvoid) {
+  // return id of any sleeping thread with the given priority
+    for (let [id, waker] of Object.entries(sleepingThreads)) {
+      if ((priorities[id] === requestedPriority) && (threadToAvoid !== parseInt(id))) {
+        return id;
+      }
+    }
+    return undefined;
+}
+
+function numThreadsWithPriority(requestedPriority) {
+    // finds number of threads that have the given priority
+    let count = 0;
+    for (let [id, priority] of Object.entries(priorities)) {
+      if (priority === requestedPriority) {
+        count += 1;
+      }
+    }
+
+    return count;
+}
+ 
 
 
 export function suspendNeeded(threadState) {
+  //console.log(`checking if thread ${threadState.id} should suspend`);
   threadState.count += 1;
-  console.log("comparing " + threadState.priority +  " vs " + maxPriorities[0]);
-  return ((threadState.count > 10) || (threadState.priority < maxPriorities[0]));
+  const currentMaxPriority = getMaxPriority();
+
+  if (Object.keys(threadFuncs).length === 1) {
+    // only one thread present (the current thread)
+    return false;
+  }
+
+  if (threadState.priority != currentMaxPriority) {
+    return true; // suspend and allow higher priority thread to continue
+  }
+
+  if (numThreadsWithPriority(threadState.priority) > 1) {
+    // allow another equally important thread to run, if this thread's time slice is exhausted
+    const shouldSuspend = threadState.count > 10;
+    return shouldSuspend;
+  }
 }
 
 export async function suspend(threadState, func) {
-  await threadState.count;
+ // console.log(`suspending thread ${threadState.id}`);
+  // identify thread to be awoken next
+  const currentMaxPriority = getMaxPriority();
+  const threadToWake = getSleepingThreadIdByPriority(currentMaxPriority, threadState.id);
+  //console.log(`will wake ${threadToWake}`);
+
+  // if this thread is sleeping, schedule an awakening
+  if (threadToWake !== undefined) {
+      const waker_func = sleepingThreads[threadToWake];
+      setTimeout(() => wakeup(waker_func), 0);
+  }
+
+  await gotoSleep(threadState.id);
+
+  // when awoken:
   threadState.count = 0;
   return func(threadState);
 }
@@ -41,9 +131,9 @@ export function callHandler(threadState) {
   const args = argsArray.slice(2);
 
   if (func.isInternal) {
-    func(threadState, ...args);
+    return func(threadState, ...args);
   } else {
-    func(...args);
+    return func(...args);
   }
 
 }

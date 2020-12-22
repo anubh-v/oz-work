@@ -56,16 +56,12 @@ function transformFunctionExpression(node) {
 
 function transformNonAsyncCalls(node) {
 
-  if (isExternalFunction(node)) {
-    return;
-  }
-
   if (isThreadCall(node)) {
     node.arguments.forEach(arg => arg.source());
     return;
   }
   
-  const transformedCode = `suspendNeeded(threadState) ? await suspend(threadState, () => callHandler(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + "," + c)})) : callHandler(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)})`;
+  const transformedCode = `suspendNeeded(threadState) ? await suspend(threadState, () => callHandler(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + "," + c)})) : await callHandler(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)})`;
   node.update(transformedCode);
 }
 
@@ -79,11 +75,6 @@ function getArgs(argsArray) {
 
 function isThreadCall(node) {
   return node.callee.type === 'Identifier' && node.callee.name === 'thread';
-}
-
-function isExternalFunction(node) {
-  return node.callee.type === 'Identifier' &&
-    (node.callee.name === 'setTimeout' || node.callee.name === 'log');
 }
 
 function wrapTopLevel(topLevelSource) {
