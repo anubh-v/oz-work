@@ -47,3 +47,6 @@ When the thread needs to be resumed, its resolver function will be retrieved and
 A simple transpiler has been created. It converts thread functions into asynchronous functions and adds suspension points into the function bodies.
 
 A suspension can occur at any function application.
+
+## Limitations
+The threads cannot await on functions that complete asynchronously.
