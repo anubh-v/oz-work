@@ -42,3 +42,8 @@ Threads suspend by awaiting on Promises that will never resolve directly.
 The Promise's resolver function is stored in an object (indexed by the thread's ID).
 
 When the thread needs to be resumed, its resolver function will be retrieved and called.
+
+## Transpiler
+A simple transpiler has been created. It converts thread functions into asynchronous functions and adds suspension points into the function bodies.
+
+A suspension can occur at any function application.
