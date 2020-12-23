@@ -1,7 +1,7 @@
 import { suspend, thread } from "../thread.js";
 
 async function bar(threadState, name) {
-    for (let i = 0; i < 8000000000; i++) {
+    for (let i = 0; i < 100; i++) {
 
       console.log("thread " + name);
       if ((i % 10) === 0) {

@@ -1,10 +1,8 @@
-function goo(id) {
-  for (let i = 0; i < 8000000000; i++) {
-    console.log("thread " + id);
+function bar(name) {
+  for (let i = 0; i < 100; i++) {
+    console.log(`thread ${name} is at iteration ${i}`);
   }
 }
-
-(function(id) { console.log(id + 5); })(5);
-
-thread(() => goo(0),
-       () => goo(1));
+  
+thread([() => bar("one"), 1],
+       [() => bar("two"), 1]);
