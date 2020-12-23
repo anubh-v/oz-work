@@ -7,7 +7,7 @@ Each thread is represented by an asynchronous JavaScript function. The asynchron
 
 ## Thread creation
 
-To creates threads, the `thread` function is called with a list of `async` functions. Each `async` function should be given a integer-valued priority.
+To create threads, the `thread` function is called with a list of `async` functions. Each `async` function should be given a integer-valued priority.
 
 The snippet below creates 2 threads.
 
@@ -15,6 +15,8 @@ The snippet below creates 2 threads.
 thread([async (threadState) => { // body }, 1],
         [async (threadState)] => { // body }, 2]);
 ```
+
+Each thread's async function accepts an argument `threadState`. This contains the thread's ID, its priority and other information used for the book-keeping logic.
 
 ## Context switching
 
@@ -33,3 +35,10 @@ The "current turn" is re-determined under 3 situations:
 - When new threads are created
 - When a thread completes execution
 - When there are multiple threads with the highest priority level and one of them exceeds its "time slice"
+
+## Suspension points
+Threads suspend by awaiting on Promises that will never resolve directly.
+
+The Promise's resolver function is stored in an object (indexed by the thread's ID).
+
+When the thread needs to be resumed, its resolver function will be retrieved and called.
