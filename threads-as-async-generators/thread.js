@@ -35,9 +35,9 @@ export class ThreadManager {
         // run thread
         let result;
         if (arg != undefined) {
-            result = await generator.next();
-        } else {
             result = await generator.next(arg);
+        } else {
+            result = await generator.next();
         }
 
         while(true) {
