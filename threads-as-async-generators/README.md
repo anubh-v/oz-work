@@ -40,3 +40,4 @@ It will attach a callback function to the promise-like object, which will mark t
 
 ## Examples
 The `examples` folder contains some sample programs that use the `ThreadManager`.
+They can be run using node or via the browser (via the corresponding HTML file).
