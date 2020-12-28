@@ -15,7 +15,6 @@ import { performance } from 'perf_hooks';
  * (i.e. thread 1 does not have to wait till thread 2 and 3 are done) 
  */
 
-const manager = new ThreadManager();
 
 function generateRandomInt(min, max) {
     min = Math.ceil(min);
@@ -53,47 +52,22 @@ function dotProduct(row, matrix, colNum) {
     return result;
 }
 
-let doneFlags = [];
-function makeWorkForThread(rowHandledByThread, A, B, C) {
-    return async function* (threadState) {
-        const numCols = C.length;
-        for (let i = 0; i < numCols; i++) {
-            const temp = dotProduct(A[rowHandledByThread], B, i);
-            C[rowHandledByThread][i] = temp;
-            yield new Message('SUSPEND');
-        }
-        doneFlags[rowHandledByThread] = true;
+const startTime = performance.now();
+const A = generateMatrix(intGenerator);
+const B = generateMatrix(intGenerator);
+const C = generateMatrix(zeroGenerator);
+
+const numRows = A.length;
+const numCols = C.length;
+
+for (let row = 0; row < numRows; row++) {
+    for (let col = 0; col < numCols; col++) {
+        C[row][col] = dotProduct(A[row], B, col);
     }
 }
 
-
-manager.start(async function*(threadState) {
-   const startTime = performance.now();
-   const A = generateMatrix(intGenerator);
-   const B = generateMatrix(intGenerator);
-   const C = generateMatrix(zeroGenerator);
-
-
-   for (let i = 0; i < A.length; i++) {
-       doneFlags[i] = false;
-       manager.spawnThreads(makeWorkForThread(i, A, B, C));
-   }
-
-   manager.spawnThreads(async function*(threadState) {
-       // final thread waits until multiplication is completed
-       while(!doneFlags.every(v => v === true)) {
-           yield new Message('SUSPEND');
-       }
-
-       console.log(`done in ${performance.now() - startTime} ms`);
-       //console.log(C);
-
-   })
-
-
-   // console.log(A);
-   //console.log(B);
-});
+console.log(`done in ${performance.now() - startTime} ms`);
+//console.log(C);
 
 
 
