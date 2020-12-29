@@ -34,7 +34,7 @@ async function* consumeList(threadState, list) {
 
         [head, tail] = yield new Message('AWAIT', tail);
         if (head === undefined) { break; }
-        // console.log(head);
+         // console.log(head);
         // console.log(tail);
         
     }
@@ -57,7 +57,8 @@ async function* sieve(threadState, input_list, output_list) {
     const output_head = head;
     const output_tail = new LogicVariable();
     output_list.unify(new LogicVariable([output_head, output_tail]));
-    yield* sieve(threadState, filtered_tail, output_tail);
+    //yield* sieve(threadState, filtered_tail, output_tail);
+    manager.spawnThreads(makeWorkForThread(sieve, filtered_tail, output_tail));
 }
 
 async function* filter(threadState, input_list, predicate, output_list) {    
