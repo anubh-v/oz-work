@@ -26,6 +26,10 @@ function transform(source) {
     if (node.type === 'CallExpression') {
       transformCalls(node);
     }
+
+    if (node.type === 'ArrowFunctionExpression') {
+      transformArrowFunction(node);
+    }
   });
 
   output = wrapTopLevel(output);
@@ -45,6 +49,11 @@ function transformFunctionExpression(node) {
   const transformedCode = `mark(async function* (${insertInitialTimeIntoArgs(node.params)})
     ${node.body.source()})`;
   
+  node.update(transformedCode);
+}
+
+function transformArrowFunction(node) {
+  const transformedCode = `mark(async function*(${insertInitialTimeIntoArgs(node.params)}) { ${node.body.source()} })`;
   node.update(transformedCode);
 }
 
