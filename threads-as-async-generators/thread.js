@@ -7,7 +7,7 @@ export class ThreadManager {
         this.blockedThreads = []; // threads waiting for promise-like objects to be resolved
         this.currentThreadId = 0;
         this.nextId = 0;
-        this.numSuspensions = 0; // track number of thread switches, for debugging purposes
+        this.numSwitches = 0; // track number of thread switches, for debugging purposes
     }
 
     start(firstThreadGenerator) {
@@ -93,12 +93,13 @@ export class ThreadManager {
     }
 
     suspend(threadGenerator, threadId) {
-        this.numSuspensions += 1;
+        this.numSwitches += 1;
         this.runnableThreads.push([threadId, threadGenerator, undefined]);
     }
 
     // Add a thread into the list of blocked threads
     block(threadGenerator, threadId) {
+        this.numSwitches += 1;
         this.blockedThreads.push([threadId, threadGenerator]);
     }
 
@@ -150,5 +151,26 @@ export class ThreadManager {
         return timeNow > 2;
     }
 
+    *suspendAndCall(...args) {
+        const threadState = args[0];
+        const func = args[1];
+    
+        const funcArgs = args.splice(0, 2);
+        if (this.shouldSuspend(threadState)) {
+            yield new Message('SUSPEND');
+        }
 
+        if (func.isInternal) {
+            yield* func(threadState, ...funcArgs);
+        } else {
+            return func(...funcArgs);
+        }
+    }
+
+
+}
+
+export function mark(func) {
+    func.isInternal = true;
+    return func;
 }
