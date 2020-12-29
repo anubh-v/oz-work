@@ -1,4 +1,5 @@
 import { Message } from './message.js';
+import { performance } from 'perf_hooks';
  
 export class ThreadManager {
     constructor() {
@@ -6,6 +7,7 @@ export class ThreadManager {
         this.blockedThreads = []; // threads waiting for promise-like objects to be resolved
         this.currentThreadId = 0;
         this.nextId = 0;
+        this.numSuspensions = 0; // track number of thread switches, for debugging purposes
     }
 
     start(firstThreadGenerator) {
@@ -17,7 +19,8 @@ export class ThreadManager {
     spawn(threadGenerator) {
         const threadId = this.nextId;
         this.nextId += 1;
-        this.runnableThreads.push([threadId, threadGenerator({id: threadId}), undefined]); 
+        const threadState = {id: threadId, startTime: performance.now()};
+        this.runnableThreads.push([threadId, threadGenerator(threadState), undefined]); 
     }
 
     spawnThreads() {
@@ -56,6 +59,7 @@ export class ThreadManager {
                    this.block(generator, id);
                    Promise.resolve(result.value.value).then((arg) => {
                        this.runnableThreads.push([id, generator, arg]);
+                       this.unblock(id);
                    });
                    break;
                }
@@ -89,11 +93,19 @@ export class ThreadManager {
     }
 
     suspend(threadGenerator, threadId) {
+        this.numSuspensions += 1;
         this.runnableThreads.push([threadId, threadGenerator, undefined]);
     }
 
+    // Add a thread into the list of blocked threads
     block(threadGenerator, threadId) {
         this.blockedThreads.push([threadId, threadGenerator]);
+    }
+
+    // Remove a thread from the list of blocked threads
+    unblock(threadId) {
+        const indexToRemove = this.blockedThreads.findIndex(([id, threadGenerator]) => id === threadId);
+        this.blockedThreads.splice(indexToRemove, 1);
     }
 
     /*
@@ -130,6 +142,12 @@ export class ThreadManager {
     hasExceededRunningTime() {
         const timeNow = performance.now();
         return (timeNow - this.startTime) > 500;
+    }
+
+    shouldSuspend(threadState) {
+        const timeNow = performance.now() - threadState.startTime;
+       // console.log(`time passed for thread is ${timeNow}`);
+        return timeNow > 2;
     }
 
 
