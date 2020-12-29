@@ -17,6 +17,7 @@ export class ThreadManager {
     }
 
     spawn(threadGenerator) {
+        console.log('spawning');
         const threadId = this.nextId;
         this.nextId += 1;
         const threadState = {id: threadId, startTime: performance.now()};
@@ -151,16 +152,23 @@ export class ThreadManager {
         return timeNow > 2;
     }
 
-    *suspendAndCall(...args) {
+    async *suspendAndCall(...args) {
         const threadState = args[0];
         const func = args[1];
-    
-        const funcArgs = args.splice(0, 2);
+       // console.log(func);
+       // console.log(args);
+        args.splice(0, 2);
+        const funcArgs = args;
+        //console.log('funcArgs is ');
+        //console.log(funcArgs);
         if (this.shouldSuspend(threadState)) {
             yield new Message('SUSPEND');
         }
 
+        threadState.startTime = performance.now();
+
         if (func.isInternal) {
+            console.log(func);
             yield* func(threadState, ...funcArgs);
         } else {
             return func(...funcArgs);
