@@ -2,18 +2,6 @@ import { ThreadManager } from '../thread.js';
 import { Message } from '../message.js';
 import { performance } from 'perf_hooks';
 
-/**
- * This sample program shows how promise-like objects can be used to block threads.
- * We launch 3 threads in this program (excluding initial thread).
- * 
- * The 1st launched thread gets blocked in every iteration of a for-loop,
- * while the other threads are never blocked.
- * 
- * Expected Behaviour: The 2nd and 3rd threads complete before the 1st,
- * but they do get interrupted when thread 1 is unblocked and runnable.
- * 
- * (i.e. thread 1 does not have to wait till thread 2 and 3 are done) 
- */
 
 const manager = new ThreadManager();
 
