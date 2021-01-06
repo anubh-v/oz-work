@@ -25,7 +25,7 @@ function generateRow(rowLength, numGenerator) {
 }
 
 function generateMatrix(numGenerator) {
-    const n = 25;
+    const n = 20;
     const matrix = [];
     for (let i = 0; i < n; i++) {
         matrix.push(generateRow(n, numGenerator));
@@ -77,7 +77,7 @@ manager.start(async function*(threadState) {
        }
 
        console.log(`done in ${performance.now() - startTime} ms`);
-       console.log(`number of thread switches: ${manager.numSuspensions}`);
+       console.log(`number of thread switches: ${manager.numSwitches}`);
 
    })
 

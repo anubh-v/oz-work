@@ -32,6 +32,6 @@ const eratosthenes = function(n) {
 
 const startTime = performance.now();
 const primes = eratosthenes(200);
-console.log(primes);
+//console.log(primes);
 console.log(`done in ${performance.now() - startTime} ms`);
 

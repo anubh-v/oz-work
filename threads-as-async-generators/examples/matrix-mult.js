@@ -24,7 +24,7 @@ function generateRow(rowLength, numGenerator) {
 }
 
 function generateMatrix(numGenerator) {
-    const n = 25;
+    const n = 400;
     const matrix = [];
     for (let i = 0; i < n; i++) {
         matrix.push(generateRow(n, numGenerator));
