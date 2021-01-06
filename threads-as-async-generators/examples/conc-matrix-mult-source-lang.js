@@ -7,10 +7,6 @@ function generateRandomInt(min, max) {
     //The maximum is exclusive and the minimum is inclusive
 }
 
-function push(arr, item) {
-    arr[arr.length] = item;
-}
-
 const intGenerator = function () { return generateRandomInt(0, 10); }
 const zeroGenerator = function () { return 0; }
   
@@ -18,7 +14,7 @@ function generateRow(rowLength, numGenerator) {
     const row = [];
     for (let i = 0; i < rowLength; i++) {
         const num = numGenerator(null);
-        push(row, num);
+        row.push(num);
     }
     return row;
 }
@@ -27,7 +23,7 @@ function generateMatrix(numGenerator) {
     const n = 25;
     const matrix = [];
     for (let i = 0; i < n; i++) {
-        push(matrix, generateRow(n, numGenerator));
+        matrix.push(generateRow(n, numGenerator));
     }
     return matrix;
 }
