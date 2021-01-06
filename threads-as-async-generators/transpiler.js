@@ -8,9 +8,13 @@ const threadPreamble = `import { ThreadManager, mark } from "./thread.js";
                         }`;
 
 const infile = process.argv[2];
+const outfile = process.argv[3];
 
 fs.readFile(infile, 'utf8', function(err, data) {
-  transform(data);
+  const transpiledCode = transform(data);
+  fs.writeFile(outfile, transpiledCode, 'utf8', function(err) {
+    if (err) console.log(`Error writing transpiled code to file: ${err}`);
+  });
 });
 
 function transform(source) {
@@ -32,8 +36,7 @@ function transform(source) {
     }
   });
 
-  output = wrapTopLevel(output);
-  console.log(output);
+  return wrapTopLevel(output);
 }
 
 /**
@@ -42,7 +45,7 @@ function transform(source) {
  */
 function transformFunctionDefinition(node) {
   const functionId = node.id.source();
-  let transformedCode = `function* ${functionId} (${insertThreadStateIntoArgs(node.params)})
+  let transformedCode = `async function* ${functionId} (${insertThreadStateIntoArgs(node.params)})
     ${node.body.source()}`;
   
   transformedCode += `mark(${functionId});`
@@ -54,7 +57,7 @@ function transformFunctionDefinition(node) {
  * The 1st argument of the generator function will be an object containing the thread state.
  */
 function transformFunctionExpression(node) {
-  const transformedCode = `mark(function* (${insertThreadStateIntoArgs(node.params)})
+  const transformedCode = `mark(async function* (${insertThreadStateIntoArgs(node.params)})
     ${node.body.source()})`;
   
   node.update(transformedCode);
@@ -65,7 +68,7 @@ function transformFunctionExpression(node) {
  * The 1st argument of the generator function will be an object containing the thread state.
  */
 function transformArrowFunction(node) {
-  const transformedCode = `mark(function*(${insertThreadStateIntoArgs(node.params)}) { ${node.body.source()} })`;
+  const transformedCode = `mark(async function*(${insertThreadStateIntoArgs(node.params)}) { ${node.body.source()} })`;
   node.update(transformedCode);
 }
 
@@ -94,7 +97,7 @@ function isThreadCall(node) {
 
 function wrapTopLevel(topLevelSource) {
   return ` ${threadPreamble}
-  manager.start(function*(threadState) {
+  manager.start(async function*(threadState) {
     ${topLevelSource}
   }); `;
 }
