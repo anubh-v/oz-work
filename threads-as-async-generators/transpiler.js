@@ -1,7 +1,7 @@
 import { default as falafel } from 'falafel';
 import { default as fs } from 'fs';
 
-const threadPreamble = `import { ThreadManager, mark } from "./thread.js";
+const threadPreamble = `import { ThreadManager, mark } from "../thread.js";
                         const manager = new ThreadManager();
                         const thread = function(...args) {
                             manager.spawnThreads(...args);
@@ -33,6 +33,10 @@ function transform(source) {
 
     if (node.type === 'ArrowFunctionExpression') {
       transformArrowFunction(node);
+    }
+
+    if (node.type === 'AwaitExpression') {
+      transformAwaitExpression(node);
     }
   });
 
@@ -82,6 +86,13 @@ function transformCalls(node) {
   const transformedCode = `(yield* manager.suspendAndCall(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)}))`;
   node.update(transformedCode);
 }
+
+function transformAwaitExpression(node) {
+  const promise = node.argument;
+  const transformedCode = `(yield new Message('AWAIT', ${promise.source()}))`;
+  node.update(transformedCode);
+}
+
 
 function insertThreadStateIntoArgs(argsArray) {
   return argsArray.reduce((a, c) => a + ',' + c.source(), 'threadState');
