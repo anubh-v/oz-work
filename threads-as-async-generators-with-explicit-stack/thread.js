@@ -37,7 +37,7 @@ export class ThreadManager {
         let currentFrame = stack.pop()
 
         // run thread
-        while(true) {
+        while(currentFrame !== undefined) {
             let result;
 
             if (arg != undefined) {
@@ -49,7 +49,7 @@ export class ThreadManager {
             if (result.done) {
                 arg = result.value;
                 currentFrame = stack.pop();
-                break;
+                continue;
             }
 
             if (result.value instanceof Message) {
@@ -174,9 +174,9 @@ export class ThreadManager {
 
         if (func.isInternal) {
             if (obj === undefined) {
-                yield new Message('CALL', func(threadState, ...funcArgs));
+                return yield new Message('CALL', func(threadState, ...funcArgs));
             } else {
-                yield new Message('CALL', func.call(obj, ...funcArgs));
+                return yield new Message('CALL', func.call(obj, ...funcArgs));
             }
         } else {
             if (obj === undefined) {
