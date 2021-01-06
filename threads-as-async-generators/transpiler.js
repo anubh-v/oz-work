@@ -1,7 +1,8 @@
 import { default as falafel } from 'falafel';
 import { default as fs } from 'fs';
 
-const threadPreamble = `import { ThreadManager, mark } from "../thread.js";
+const threadPreamble = `import { ThreadManager, mark } from "./thread.js";
+                        import { Message } from "./message.js";
                         const manager = new ThreadManager();
                         const thread = function(...args) {
                             manager.spawnThreads(...args);
@@ -82,8 +83,20 @@ function transformCalls(node) {
     node.arguments.forEach(arg => arg.source());
     return;
   }
+
+  if (node.callee.type === 'MemberExpression') {
+    return transformMethodCalls(node);
+  }
   
-  const transformedCode = `(yield* manager.suspendAndCall(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)}))`;
+  const transformedCode = `(yield* manager.suspendAndCall(threadState, undefined, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)}))`;
+  node.update(transformedCode);
+}
+
+function transformMethodCalls(node) {
+  const obj = node.callee.object.source();
+  const func = node.callee.source();
+
+  const transformedCode = `(yield* manager.suspendAndCall(threadState, ${obj}, ${func}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)}))`;
   node.update(transformedCode);
 }
 

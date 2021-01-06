@@ -152,8 +152,9 @@ export class ThreadManager {
 
     async *suspendAndCall(...args) {
         const threadState = args[0];
-        const func = args[1];
-        args.splice(0, 2);
+        const obj = args[1];
+        const func = args[2];
+        args.splice(0, 3);
         const funcArgs = args;
         if (this.shouldSuspend(threadState)) {
             yield new Message('SUSPEND');
@@ -162,9 +163,17 @@ export class ThreadManager {
         threadState.startTime = performance.now();
 
         if (func.isInternal) {
-            return yield* func(threadState, ...funcArgs);
+            if (obj === undefined) {
+                return yield* func(threadState, ...funcArgs);
+            } else {
+                return yield* func.call(obj, ...funcArgs);
+            }
         } else {
-            return func(...funcArgs);
+            if (obj === undefined) {
+               return func(...funcArgs);
+            } else {
+                return func.call(obj, ...funcArgs);
+            }
         }
     }
 
