@@ -36,24 +36,36 @@ function transform(source) {
   console.log(output);
 }
 
+/**
+ * Converts a function definition into a generator function definition.
+ * The 1st argument of the generator function will be an object containing the thread state.
+ */
 function transformFunctionDefinition(node) {
-  const functionId = node.id = node.id.source();
-  let transformedCode = `async function* ${functionId} (${insertInitialTimeIntoArgs(node.params)})
+  const functionId = node.id.source();
+  let transformedCode = `function* ${functionId} (${insertThreadStateIntoArgs(node.params)})
     ${node.body.source()}`;
   
   transformedCode += `mark(${functionId});`
   node.update(transformedCode);
 }
 
+/**
+ * Converts a function expression into a generator function expression.
+ * The 1st argument of the generator function will be an object containing the thread state.
+ */
 function transformFunctionExpression(node) {
-  const transformedCode = `mark(async function* (${insertInitialTimeIntoArgs(node.params)})
+  const transformedCode = `mark(function* (${insertThreadStateIntoArgs(node.params)})
     ${node.body.source()})`;
   
   node.update(transformedCode);
 }
 
+/**
+ * Converts an arrow function expression into a generator function expression.
+ * The 1st argument of the generator function will be an object containing the thread state.
+ */
 function transformArrowFunction(node) {
-  const transformedCode = `mark(async function*(${insertInitialTimeIntoArgs(node.params)}) { ${node.body.source()} })`;
+  const transformedCode = `mark(function*(${insertThreadStateIntoArgs(node.params)}) { ${node.body.source()} })`;
   node.update(transformedCode);
 }
 
@@ -64,11 +76,11 @@ function transformCalls(node) {
     return;
   }
   
-  const transformedCode = `yield* manager.suspendAndCall(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)})`;
+  const transformedCode = `(yield* manager.suspendAndCall(threadState, ${node.callee.source()}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)}))`;
   node.update(transformedCode);
 }
 
-function insertInitialTimeIntoArgs(argsArray) {
+function insertThreadStateIntoArgs(argsArray) {
   return argsArray.reduce((a, c) => a + ',' + c.source(), 'threadState');
 }
 
@@ -82,7 +94,7 @@ function isThreadCall(node) {
 
 function wrapTopLevel(topLevelSource) {
   return ` ${threadPreamble}
-  manager.start(async function*(threadState) {
+  manager.start(function*(threadState) {
     ${topLevelSource}
   }); `;
 }

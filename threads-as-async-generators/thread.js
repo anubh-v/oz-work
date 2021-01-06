@@ -17,7 +17,7 @@ export class ThreadManager {
     }
 
     spawn(threadGenerator) {
-        console.log('spawning');
+       // console.log('spawning');
         const threadId = this.nextId;
         this.nextId += 1;
         const threadState = {id: threadId, startTime: performance.now()};
@@ -149,7 +149,7 @@ export class ThreadManager {
     shouldSuspend(threadState) {
         const timeNow = performance.now() - threadState.startTime;
        // console.log(`time passed for thread is ${timeNow}`);
-        return timeNow > 2;
+        return timeNow > 20;
     }
 
     async *suspendAndCall(...args) {
@@ -169,7 +169,7 @@ export class ThreadManager {
 
         if (func.isInternal) {
             console.log(func);
-            yield* func(threadState, ...funcArgs);
+            return yield* func(threadState, ...funcArgs);
         } else {
             return func(...funcArgs);
         }
