@@ -13,7 +13,11 @@ async function* foo (threadState,id)
     }
 }mark(foo);
 
-thread(mark(async function*(threadState) { (yield* manager.suspendAndCall(threadState, foo, 1)) }), mark(async function*(threadState) { (yield* manager.suspendAndCall(threadState, foo, 2)) }));
+thread(mark(async function*(threadState) { {
+    (yield* manager.suspendAndCall(threadState, foo, 1));
+    (yield new Message('AWAIT', 1));
+} })
+, mark(async function*(threadState) { (yield* manager.suspendAndCall(threadState, foo, 2)) }));
 
 
   }); 

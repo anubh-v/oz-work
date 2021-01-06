@@ -6,5 +6,6 @@ function foo(id) {
     }
 }
 
-thread(() => foo(1), () => foo(2));
+thread(async () => foo(1),
+       async () => foo(2));
 
