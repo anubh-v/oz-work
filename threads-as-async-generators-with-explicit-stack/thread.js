@@ -34,7 +34,7 @@ export class ThreadManager {
         const threadIndex = this.runnableThreads.findIndex(([id, stack, arg]) => id === threadId);
         let [id, stack, arg] = this.runnableThreads.splice(threadIndex, 1)[0];
         this.currentThreadId = id;
-        let currentFrame = stack.pop()
+        let currentFrame = stack.pop();
 
         // run thread
         while(currentFrame !== undefined) {
@@ -54,15 +54,17 @@ export class ThreadManager {
 
             if (result.value instanceof Message) {
                if (result.value.isSuspend()) {
-                   this.suspend(generator, id);
+                   stack.push(currentFrame);
+                   this.suspend(stack, id);
                    break;
                }
 
                if (result.value.isPromiseLike()) {
                    // indicate that current thread is blocked
-                   this.block(generator, id);
+                   stack.push(currentFrame);
+                   this.block(stack, id);
                    Promise.resolve(result.value.value).then((arg) => {
-                       this.runnableThreads.push([id, generator, arg]);
+                       this.runnableThreads.push([id, stack, arg]);
                        this.unblock(id);
                    });
                    break;

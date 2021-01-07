@@ -16,6 +16,7 @@ async function* factorial (threadState,n)
     }
 }mark(factorial);
 
-thread(mark(async function*(threadState) { (yield* manager.suspendAndCall(threadState, console, console.log, (yield* manager.suspendAndCall(threadState, undefined, factorial, 50)))) }));
+thread(mark(async function*(threadState) { (yield* manager.suspendAndCall(threadState, console, console.log, (yield* manager.suspendAndCall(threadState, undefined, factorial, 1000000)))) }),
+       mark(async function*(threadState) { (yield* manager.suspendAndCall(threadState, console, console.log, (yield* manager.suspendAndCall(threadState, undefined, factorial, 1000000)))) }));
 
   }); 

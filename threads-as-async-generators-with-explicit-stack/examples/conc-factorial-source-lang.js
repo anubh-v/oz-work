@@ -8,4 +8,5 @@ function factorial(n) {
     }
 }
 
-thread(async () => console.log(factorial(10)));
+thread(async () => console.log(factorial(100)),
+       async () => console.log(factorial(100)));
