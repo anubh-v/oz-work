@@ -20,19 +20,26 @@ export class ThreadManager {
         const threadId = this.nextId;
         this.nextId += 1;
         const threadState = {id: threadId, startTime: performance.now()};
-        this.runnableThreads.push([threadId, [threadGenerator(threadState)], undefined]); 
+        let threadResolver;
+        const threadDonePromise = new Promise((resolve) => { threadResolver = resolve; });
+        this.runnableThreads.push([threadId, [threadGenerator(threadState)], undefined, threadResolver]);
+
+        return threadDonePromise;
     }
 
     spawnThreads() {
+        let donePromises = [];
         for (let threadGenerator of arguments) {
-            this.spawn(threadGenerator);
+            donePromises.push(this.spawn(threadGenerator));
         }
+
+        return donePromises;
     }
 
     async run(threadId) {
         // remove thread from sleeping threads
-        const threadIndex = this.runnableThreads.findIndex(([id, stack, arg]) => id === threadId);
-        let [id, stack, arg] = this.runnableThreads.splice(threadIndex, 1)[0];
+        const threadIndex = this.runnableThreads.findIndex(([id, stack, arg, resolver]) => id === threadId);
+        let [id, stack, arg, resolver] = this.runnableThreads.splice(threadIndex, 1)[0];
         this.currentThreadId = id;
         let currentFrame = stack.pop();
 
@@ -53,30 +60,32 @@ export class ThreadManager {
             }
 
             if (result.value instanceof Message) {
+                stack.push(currentFrame);
                if (result.value.isSuspend()) {
-                   stack.push(currentFrame);
-                   this.suspend(stack, id);
+                   this.suspend(stack, id, resolver);
                    break;
                }
 
                if (result.value.isPromiseLike()) {
                    // indicate that current thread is blocked
-                   stack.push(currentFrame);
                    this.block(stack, id);
                    Promise.resolve(result.value.value).then((arg) => {
-                       this.runnableThreads.push([id, stack, arg]);
+                       this.runnableThreads.push([id, stack, arg, resolver]);
                        this.unblock(id);
                    });
                    break;
                }
 
                if (result.value.isCall()) {
-                   stack.push(currentFrame);
                    currentFrame = result.value.value;
                }
             }
 
             arg = undefined;
+        }
+
+        if (stack.length === 0) {
+            resolver('thread complete');
         }
 
         // TODO: schedule a timeout if needed
@@ -104,9 +113,9 @@ export class ThreadManager {
         
     }
 
-    suspend(stack, threadId) {
+    suspend(stack, threadId, resolver) {
         this.numSwitches += 1;
-        this.runnableThreads.push([threadId, stack, undefined]);
+        this.runnableThreads.push([threadId, stack, undefined, resolver]);
     }
 
     // Add a thread into the list of blocked threads
