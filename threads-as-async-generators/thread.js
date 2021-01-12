@@ -180,9 +180,8 @@ export class ThreadManager {
         const funcArgs = args;
         if (this.shouldSuspend(threadState)) {
             yield new Message('SUSPEND');
+            threadState.startTime = performance.now();
         }
-
-        threadState.startTime = performance.now();
 
         if (func.isInternal) {
             if (obj === undefined) {
