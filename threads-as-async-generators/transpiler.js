@@ -1,8 +1,8 @@
 import { default as falafel } from 'falafel';
 import { default as fs } from 'fs';
 
-const threadPreamble = `import { ThreadManager, mark } from "./thread.js";
-                        import { Message } from "./message.js";
+const threadPreamble = `import { ThreadManager, mark } from "../thread.js";
+                        import { Message } from "../message.js";
                         const manager = new ThreadManager();
                         const thread = function(...args) {
                             manager.spawnThreads(...args);
@@ -19,7 +19,7 @@ fs.readFile(infile, 'utf8', function(err, data) {
 });
 
 function transform(source) {
-  let output = falafel(source, function (node) {
+  let output = falafel(source, {sourceType: "module"}, function (node) {
     if (node.type === 'FunctionDeclaration') {
       transformFunctionDefinition(node);
     }
@@ -96,8 +96,13 @@ function transformMethodCalls(node) {
   const obj = node.callee.object.source();
   const func = node.callee.source();
 
-  const transformedCode = `(yield* manager.suspendAndCall(threadState, ${obj}, ${func}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)}))`;
-  node.update(transformedCode);
+  if (node.arguments.length === 0) {
+    const transformedCode = `(yield* manager.suspendAndCall(threadState, ${obj}, ${func}))`;
+    node.update(transformedCode);
+  } else {
+    const transformedCode = `(yield* manager.suspendAndCall(threadState, ${obj}, ${func}, ${getArgs(node.arguments).reduce((a, c) => a + ',' + c)}))`;
+    node.update(transformedCode);
+  }
 }
 
 function transformAwaitExpression(node) {
