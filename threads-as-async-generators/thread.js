@@ -1,5 +1,24 @@
 import { Message } from './message.js';
 import { performance } from 'perf_hooks';
+
+class Thread {
+    constructor(id, threadGenerator, continuationArg) {
+         this.id = id;
+         this.threadGenerator = threadGenerator;
+         this.continuationArg = continuationArg;
+    }
+
+    async runTillNextYield() {
+        let yieldResult;
+        if (this.continuationArg != undefined) {
+            yieldResult = await this.threadGenerator.next(this.continuationArg);
+        } else {
+            yieldResult = await this.threadGenerator.next();
+        }
+        return yieldResult;
+    }
+
+}
  
 export class ThreadManager {
     constructor() {
@@ -20,7 +39,7 @@ export class ThreadManager {
         const threadId = this.nextId;
         this.nextId += 1;
         const threadState = {id: threadId, startTime: performance.now()};
-        this.runnableThreads.push([threadId, threadGenerator(threadState), undefined]); 
+        this.runnableThreads.push(new Thread(threadId, threadGenerator(threadState), undefined)); 
     }
 
     spawnThreads() {
@@ -29,42 +48,44 @@ export class ThreadManager {
         }
     }
 
-    async run(threadId) {
-        // remove thread from sleeping threads
-        const threadIndex = this.runnableThreads.findIndex(([id, generator, arg]) => id === threadId);
-        const [id, generator, arg] = this.runnableThreads.splice(threadIndex, 1)[0];
-        this.currentThreadId = id;
+    getRunnableThread(threadId) {
+        const threadIndex = this.runnableThreads.findIndex(thread => thread.id === threadId);
+        const thread = this.runnableThreads.splice(threadIndex, 1)[0];
+        return thread;
+    }
 
-        // run thread
-        let result;
-        if (arg != undefined) {
-            result = await generator.next(arg);
-        } else {
-            result = await generator.next();
-        }
+    makeRunnable(thread) {
+        this.runnableThreads.push(thread);
+    }
+
+    async run(threadId) {
+        // remove thread from runnable threads
+        const thread = this.getRunnableThread(threadId);
+        this.currentThreadId = thread.id;
 
         while(true) {
+            let result = await thread.runTillNextYield();
             if (result.done) {
                 break;
             }
 
             if (result.value instanceof Message) {
                if (result.value.isSuspend()) {
-                   this.suspend(generator, id);
+                   this.suspend(thread);
                    break;
                }
 
                if (result.value.isPromiseLike()) {
                    // indicate that current thread is blocked
-                   this.block(generator, id);
+                   this.block(thread);
                    Promise.resolve(result.value.value).then((arg) => {
-                       this.runnableThreads.push([id, generator, arg]);
-                       this.unblock(id);
+                       thread.continuationArg = arg;
+                       this.makeRunnable(thread);
+                       this.unblock(thread.id);
                    });
                    break;
                }
             }
-            result = await generator.next();
         }
 
         // TODO: schedule a timeout if needed
@@ -92,20 +113,21 @@ export class ThreadManager {
         
     }
 
-    suspend(threadGenerator, threadId) {
+    suspend(thread) {
+        thread.continuationArg = undefined;
         this.numSwitches += 1;
-        this.runnableThreads.push([threadId, threadGenerator, undefined]);
+        this.makeRunnable(thread);
     }
 
     // Add a thread into the list of blocked threads
-    block(threadGenerator, threadId) {
+    block(thread) {
         this.numSwitches += 1;
-        this.blockedThreads.push([threadId, threadGenerator]);
+        this.blockedThreads.push(thread);
     }
 
     // Remove a thread from the list of blocked threads
     unblock(threadId) {
-        const indexToRemove = this.blockedThreads.findIndex(([id, threadGenerator]) => id === threadId);
+        const indexToRemove = this.blockedThreads.findIndex((thread) => thread.id === threadId);
         this.blockedThreads.splice(indexToRemove, 1);
     }
 
@@ -116,7 +138,7 @@ export class ThreadManager {
         if (this.runnableThreads.length === 1) {
             return previousThread; // there is only one runnable thread, just continue it
         } else {
-            return this.runnableThreads.find(([id, generator, arg]) => id !== previousThread)[0];
+            return this.runnableThreads.find((thread) => thread.id !== previousThread);
         }
     }
 
