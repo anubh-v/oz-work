@@ -5,7 +5,7 @@ const threadPreamble = `import { ThreadManager, mark } from "../thread.js";
                         import { Message } from "../message.js";
                         const manager = new ThreadManager();
                         const thread = function(...args) {
-                            manager.spawnThreads(...args);
+                            return manager.spawnThreads(...args);
                         }`;
 
 const infile = process.argv[2];
