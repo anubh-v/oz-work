@@ -2,10 +2,11 @@ import { Message } from './message.js';
 import { performance } from 'perf_hooks';
 
 class Thread {
-    constructor(id, threadGenerator, continuationArg) {
+    constructor(id, threadGenerator, continuationArg, resolver) {
          this.id = id;
          this.threadGenerator = threadGenerator;
          this.continuationArg = continuationArg;
+         this.resolver = resolver;
     }
 
     async runTillNextYield() {
@@ -39,13 +40,20 @@ export class ThreadManager {
         const threadId = this.nextId;
         this.nextId += 1;
         const threadState = {id: threadId, startTime: performance.now()};
-        this.runnableThreads.push(new Thread(threadId, threadGenerator(threadState), undefined)); 
+        let resolver;
+        const threadPromise = new Promise(onFulfilled => {
+            resolver = onFulfilled;
+        });
+        this.runnableThreads.push(new Thread(threadId, threadGenerator(threadState), undefined, resolver));
+        return threadPromise;
     }
 
     spawnThreads() {
+        const threadPromises = [];
         for (let threadGenerator of arguments) {
-            this.spawn(threadGenerator);
+            threadPromises.push(this.spawn(threadGenerator));
         }
+        return threadPromises;
     }
 
     getRunnableThread(threadId) {
@@ -64,7 +72,14 @@ export class ThreadManager {
         this.currentThreadId = thread.id;
 
         while(true) {
+            const currentTime = performance.now();
             let result = await thread.runTillNextYield();
+            if (this.threadTime) {
+                this.threadTime += (performance.now() - currentTime);
+            } else {
+                this.threadTime = (performance.now() - currentTime);
+            }
+
             if (result.done) {
                 break;
             }
@@ -109,7 +124,10 @@ export class ThreadManager {
             // no more runnable threads, but there are blocked threads
             // schedule a poll after some time
             setTimeout(() => this.poll(), 0);
+            return;
         }
+
+        this.done();
         
     }
 
@@ -159,7 +177,7 @@ export class ThreadManager {
         }
 
         // if no runnable, and no blocked threads, no further work needed by ThreadManager
-        
+        this.done();
     }
 
     hasExceededRunningTime() {
@@ -172,7 +190,11 @@ export class ThreadManager {
         return timeNow > 20;
     }
 
-    async *suspendAndCall(...args) {
+    done() {
+        console.log(this.threadTime);
+    }
+
+    *suspendAndCall(...args) {
         const threadState = args[0];
         const obj = args[1];
         const func = args[2];
@@ -183,6 +205,7 @@ export class ThreadManager {
             threadState.startTime = performance.now();
         }
 
+       // console.log(args);
         if (func.isInternal) {
             if (obj === undefined) {
                 return yield* func(threadState, ...funcArgs);

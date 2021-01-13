@@ -22,21 +22,13 @@ function transform(source) {
   let output = falafel(source, {sourceType: "module"}, function (node) {
     if (node.type === 'FunctionDeclaration') {
       transformFunctionDefinition(node);
-    }
-
-    if (node.type === 'FunctionExpression') {
+    } else if (node.type === 'FunctionExpression') {
       transformFunctionExpression(node);
-    }
-
-    if (node.type === 'CallExpression') {
+    } else if (node.type === 'CallExpression') {
       transformCalls(node);
-    }
-
-    if (node.type === 'ArrowFunctionExpression') {
+    } else if (node.type === 'ArrowFunctionExpression') {
       transformArrowFunction(node);
-    }
-
-    if (node.type === 'AwaitExpression') {
+    } else if (node.type === 'AwaitExpression') {
       transformAwaitExpression(node);
     }
   });
@@ -50,7 +42,7 @@ function transform(source) {
  */
 function transformFunctionDefinition(node) {
   const functionId = node.id.source();
-  let transformedCode = `async function* ${functionId} (${insertThreadStateIntoArgs(node.params)})
+  let transformedCode = `function* ${functionId} (${insertThreadStateIntoArgs(node.params)})
     ${node.body.source()}`;
   
   transformedCode += `mark(${functionId});`
@@ -62,7 +54,7 @@ function transformFunctionDefinition(node) {
  * The 1st argument of the generator function will be an object containing the thread state.
  */
 function transformFunctionExpression(node) {
-  const transformedCode = `mark(async function* (${insertThreadStateIntoArgs(node.params)})
+  const transformedCode = `mark(function* (${insertThreadStateIntoArgs(node.params)})
     ${node.body.source()})`;
   
   node.update(transformedCode);
@@ -73,7 +65,7 @@ function transformFunctionExpression(node) {
  * The 1st argument of the generator function will be an object containing the thread state.
  */
 function transformArrowFunction(node) {
-  const transformedCode = `mark(async function*(${insertThreadStateIntoArgs(node.params)}) { ${node.body.source()} })`;
+  const transformedCode = `mark(function*(${insertThreadStateIntoArgs(node.params)}) { ${node.body.source()} })`;
   node.update(transformedCode);
 }
 
@@ -93,6 +85,11 @@ function transformCalls(node) {
 }
 
 function transformMethodCalls(node) {
+
+  if (node.callee.object.type === 'CallExpression') {
+    return;
+  }
+
   const obj = node.callee.object.source();
   const func = node.callee.source();
 
@@ -126,7 +123,7 @@ function isThreadCall(node) {
 
 function wrapTopLevel(topLevelSource) {
   return ` ${threadPreamble}
-  manager.start(async function*(threadState) {
+  manager.start(function*(threadState) {
     ${topLevelSource}
   }); `;
 }
